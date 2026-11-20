@@ -47,10 +47,13 @@ export default function Footer({ onSelectCategory }: FooterProps) {
           {/* Brand & Description (Col 1-4) */}
           <div className="lg:col-span-4 flex flex-col">
             <div className="flex items-center gap-2.5 mb-4">
-              <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-[#1769FF] to-[#101B35] border border-[#39BFFF]/30 shadow-md">
-                <span className="text-white font-black tracking-tight text-lg">
-                  M<span className="text-[#39BFFF]">K</span>
-                </span>
+              {/* Official Logo Image */}
+              <div className="relative flex items-center justify-center w-10 h-10 sm:w-11 sm:h-11 rounded-xl overflow-hidden shadow-md border border-[#39BFFF]/40 bg-[#0B1222]">
+                <img
+                  src="/images/mktech-logo.webp"
+                  alt="MK Tech Logo"
+                  className="w-full h-full object-contain p-0.5"
+                />
               </div>
               <span className="font-black text-xl tracking-tight text-white">
                 MK <span className="text-[#39BFFF]">TECH</span>

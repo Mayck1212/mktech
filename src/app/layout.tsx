@@ -27,7 +27,12 @@ export const metadata: Metadata = {
   authors: [{ name: "MK Tech" }],
   creator: "MK Tech",
   icons: {
-    icon: "/favicon.ico",
+    icon: [
+      { url: "/favicon.ico" },
+      { url: "/images/mktech-logo.png", type: "image/png" },
+    ],
+    shortcut: "/favicon.ico",
+    apple: "/apple-icon.png",
   },
   openGraph: {
     title: "MK Tech | Assistência Técnica & Serviços Digitais",
