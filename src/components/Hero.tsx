@@ -23,11 +23,13 @@ export default function Hero({ onSearchSubmit, searchQuery }: HeroProps) {
   };
 
   const quickTags = [
-    { label: 'Formatação Windows', query: 'Windows' },
-    { label: 'Limpeza de Celular', query: 'Limpeza' },
-    { label: 'Normas ABNT', query: 'ABNT' },
-    { label: 'Otimização Gamer', query: 'Otimização' },
-    { label: 'Suporte Remoto', query: 'Remoto' },
+    { label: 'Formatação de Celular', query: 'Formatação de celular' },
+    { label: 'Formatação PC/Notebook', query: 'Formatação de PC' },
+    { label: 'Pacote Promocional', query: 'Pacote' },
+    { label: 'Músicas no Pendrive', query: 'Músicas' },
+    { label: 'Otimização de PC Lento', query: 'Otimização' },
+    { label: 'Formatação ABNT', query: 'ABNT' },
+    { label: 'Limpeza de Notebook', query: 'Limpeza' },
   ];
 
   return (

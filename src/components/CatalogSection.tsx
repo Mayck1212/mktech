@@ -3,23 +3,28 @@
 import React, { useMemo } from 'react';
 import {
   Search,
-  Filter,
   X,
   Sparkles,
   ArrowUpDown,
   Smartphone,
   Laptop,
+  Cpu,
+  Wifi,
+  HardDrive,
   FileText,
   Globe,
   SlidersHorizontal,
   MessageCircle,
+  HelpCircle,
+  Info,
 } from 'lucide-react';
 import {
   ServiceItem,
   ServiceCategory,
   AvailabilityStatus,
   CATEGORIES,
-  WHATSAPP_NUMBER,
+  COMMERCIAL_DISCLAIMER,
+  buildNotFoundWhatsAppUrl,
 } from '@/data/services';
 import ServiceCard from './ServiceCard';
 
@@ -54,49 +59,50 @@ export default function CatalogSection({
   onSelectService,
   onRequestWhatsApp,
 }: CatalogSectionProps) {
-  // Filter & sort logic
+  // Advanced tokenized search & filter logic
   const filteredServices = useMemo(() => {
     let result = [...services];
 
-    // Search query filter (normalizes text, accents)
     if (searchQuery.trim().length > 0) {
-      const q = searchQuery
-        .toLowerCase()
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '');
+      const cleanText = (str: string) =>
+        str
+          .toLowerCase()
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .replace(/[^\w\s]/gi, ' ')
+          .trim();
+
+      const rawQ = cleanText(searchQuery);
+      // Split into keywords excluding short stopwords
+      const stopWords = new Set(['o', 'a', 'os', 'as', 'um', 'uma', 'de', 'do', 'da', 'em', 'no', 'na', 'para', 'com', 'que', 'meu', 'minha']);
+      const tokens = rawQ
+        .split(/\s+/)
+        .filter((t) => t.length > 1 && !stopWords.has(t));
 
       result = result.filter((item) => {
-        const nameNorm = item.name
-          .toLowerCase()
-          .normalize('NFD')
-          .replace(/[\u0300-\u036f]/g, '');
-        const descNorm = item.description
-          .toLowerCase()
-          .normalize('NFD')
-          .replace(/[\u0300-\u036f]/g, '');
-        const fullDescNorm = item.fullDescription
-          .toLowerCase()
-          .normalize('NFD')
-          .replace(/[\u0300-\u036f]/g, '');
-        const catNorm = CATEGORIES[item.category].name
-          .toLowerCase()
-          .normalize('NFD')
-          .replace(/[\u0300-\u036f]/g, '');
-
-        const keywordsNorm = item.keywords.map((kw) =>
-          kw
-            .toLowerCase()
-            .normalize('NFD')
-            .replace(/[\u0300-\u036f]/g, '')
+        const itemCategory = CATEGORIES[item.category];
+        const corpus = cleanText(
+          `${item.name} ${item.description} ${item.fullDescription} ${
+            itemCategory ? itemCategory.name : ''
+          } ${item.keywords.join(' ')}`
         );
 
-        return (
-          nameNorm.includes(q) ||
-          descNorm.includes(q) ||
-          fullDescNorm.includes(q) ||
-          catNorm.includes(q) ||
-          keywordsNorm.some((kw) => kw.includes(q))
-        );
+        // Exact phrase match first
+        if (corpus.includes(rawQ)) {
+          return true;
+        }
+
+        // Token match: if user typed multiple words (e.g. "pc travando"), check if all tokens are present
+        if (tokens.length > 0) {
+          const matchAll = tokens.every((token) => corpus.includes(token));
+          if (matchAll) return true;
+
+          // Or if at least 60% of tokens match
+          const matchedCount = tokens.filter((token) => corpus.includes(token)).length;
+          return matchedCount >= Math.ceil(tokens.length * 0.6);
+        }
+
+        return false;
       });
     }
 
@@ -117,20 +123,35 @@ export default function CatalogSection({
 
     // Sorting
     result.sort((a, b) => {
-      if (sortBy === 'price-asc') {
-        return a.price - b.price;
+      // Package always on top if recommended
+      if (sortBy === 'recommended') {
+        if (a.isPackage && !b.isPackage) return -1;
+        if (!a.isPackage && b.isPackage) return 1;
+
+        if (a.popularRank !== undefined && b.popularRank !== undefined) {
+          return a.popularRank - b.popularRank;
+        }
+        if (a.popularRank !== undefined) return -1;
+        if (b.popularRank !== undefined) return 1;
+
+        return a.name.localeCompare(b.name, 'pt-BR');
       }
+
+      if (sortBy === 'price-asc') {
+        const pA = a.price === 0 ? 999999 : a.price;
+        const pB = b.price === 0 ? 999999 : b.price;
+        return pA - pB;
+      }
+
       if (sortBy === 'price-desc') {
         return b.price - a.price;
       }
+
       if (sortBy === 'name-asc') {
         return a.name.localeCompare(b.name, 'pt-BR');
       }
-      // 'recommended' - featured first, then name
-      if (a.featured !== b.featured) {
-        return a.featured ? -1 : 1;
-      }
-      return a.name.localeCompare(b.name, 'pt-BR');
+
+      return 0;
     });
 
     return result;
@@ -157,13 +178,22 @@ export default function CatalogSection({
     onSortByChange('recommended');
   };
 
-  const categoryButtons: { id: ServiceCategory | 'todos'; label: string; icon?: React.ReactNode }[] = [
+  const categoryButtons: {
+    id: ServiceCategory | 'todos';
+    label: string;
+    icon?: React.ReactNode;
+  }[] = [
     { id: 'todos', label: 'Todos' },
-    { id: 'celulares', label: 'Celulares', icon: <Smartphone className="w-3.5 h-3.5" /> },
-    { id: 'computadores', label: 'Computadores', icon: <Laptop className="w-3.5 h-3.5" /> },
-    { id: 'documentos', label: 'Documentos & Slides', icon: <FileText className="w-3.5 h-3.5" /> },
-    { id: 'digitais', label: 'Serviços Digitais', icon: <Globe className="w-3.5 h-3.5" /> },
+    { id: 'celulares', label: 'Celulares e Android', icon: <Smartphone className="w-3.5 h-3.5" /> },
+    { id: 'computadores', label: 'Computadores e SO', icon: <Laptop className="w-3.5 h-3.5" /> },
+    { id: 'hardware', label: 'Hardware e Peças', icon: <Cpu className="w-3.5 h-3.5" /> },
+    { id: 'redes', label: 'Internet e Redes', icon: <Wifi className="w-3.5 h-3.5" /> },
+    { id: 'armazenamento', label: 'Arquivos e Backup', icon: <HardDrive className="w-3.5 h-3.5" /> },
+    { id: 'documentos', label: 'Documentos e ABNT', icon: <FileText className="w-3.5 h-3.5" /> },
+    { id: 'solucoes-digitais', label: 'Soluções Digitais', icon: <Globe className="w-3.5 h-3.5" /> },
   ];
+
+  const notFoundWhatsAppUrl = buildNotFoundWhatsAppUrl(searchQuery);
 
   return (
     <section id="catalogo" className="py-14 sm:py-20 bg-[#0B1222] relative scroll-mt-20">
@@ -173,13 +203,13 @@ export default function CatalogSection({
         <div className="text-center max-w-3xl mx-auto mb-10 sm:mb-12">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#101B35] border border-[#1E2E55] text-xs font-semibold text-[#39BFFF] mb-3">
             <SlidersHorizontal className="w-3.5 h-3.5" />
-            <span>Catálogo Interativo</span>
+            <span>Catálogo Geral de Serviços</span>
           </div>
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-white tracking-tight">
             Todos os serviços.
           </h2>
           <p className="mt-2 text-sm sm:text-base text-slate-400">
-            Filtre por categoria, pesquise por sintomas ou ordene pelo melhor preço. Clique em qualquer serviço para ver detalhes e solicitar atendimento.
+            Pesquise pelo sintoma do seu aparelho, filtre por categoria ou confira preços transparentes e opções sob orçamento.
           </p>
         </div>
 
@@ -195,7 +225,7 @@ export default function CatalogSection({
               type="text"
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
-              placeholder="Pesquisar por nome, problema (ex: vírus, ABNT, tela preta, formatar)..."
+              placeholder="Pesquise por nome ou problema: Ex: 'Meu PC está travando', 'passar fotos', 'música pendrive'..."
               className="w-full bg-[#0B1222] border border-[#1E2E55] focus:border-[#39BFFF] focus:ring-2 focus:ring-[#39BFFF]/20 rounded-xl pl-11 pr-10 py-3 text-sm text-white placeholder-slate-400 transition-all outline-none"
             />
             {searchQuery && (
@@ -214,6 +244,11 @@ export default function CatalogSection({
           <div className="mb-5 overflow-x-auto pb-1 scrollbar-none flex items-center gap-2">
             {categoryButtons.map((btn) => {
               const isSelected = selectedCategory === btn.id;
+              const count =
+                btn.id === 'todos'
+                  ? services.length
+                  : services.filter((s) => s.category === btn.id).length;
+
               return (
                 <button
                   key={btn.id}
@@ -227,9 +262,7 @@ export default function CatalogSection({
                 >
                   {btn.icon}
                   <span>{btn.label}</span>
-                  {btn.id === 'todos' && (
-                    <span className="ml-1 text-[11px] opacity-70">({services.length})</span>
-                  )}
+                  <span className="ml-1 text-[11px] opacity-70">({count})</span>
                 </button>
               );
             })}
@@ -267,7 +300,7 @@ export default function CatalogSection({
                 }`}
               >
                 <Sparkles className="w-3.5 h-3.5" />
-                <span>Em destaque</span>
+                <span>Mais procurados</span>
               </button>
             </div>
 
@@ -280,7 +313,7 @@ export default function CatalogSection({
                 onChange={(e) => onSortByChange(e.target.value as any)}
                 className="bg-[#0B1222] border border-[#1E2E55] text-xs text-slate-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-[#39BFFF]"
               >
-                <option value="recommended">Recomendados</option>
+                <option value="recommended">Recomendados / Populares</option>
                 <option value="price-asc">Menor preço</option>
                 <option value="price-desc">Maior preço</option>
                 <option value="name-asc">Ordem alfabética (A-Z)</option>
@@ -293,7 +326,7 @@ export default function CatalogSection({
           {hasActiveFilters && (
             <div className="mt-4 pt-3 border-t border-[#1E2E55]/60 flex items-center justify-between text-xs text-slate-400 flex-wrap gap-2">
               <span>
-                Filtros ativos • Encontrado(s):{' '}
+                Filtros ativos • Exibindo:{' '}
                 <strong className="text-white font-bold">{filteredServices.length}</strong> de {services.length} serviços
               </span>
 
@@ -312,7 +345,7 @@ export default function CatalogSection({
 
         {/* Services Grid or Empty State */}
         {filteredServices.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
             {filteredServices.map((service) => (
               <ServiceCard
                 key={service.id}
@@ -334,32 +367,54 @@ export default function CatalogSection({
             </h3>
 
             <p className="text-sm text-slate-400 mb-6 max-w-md">
-              Não encontramos nenhum serviço com os termos ou filtros selecionados. Tente buscar por palavras mais simples como &quot;formatação&quot;, &quot;celular&quot; ou &quot;ABNT&quot;.
+              Não encontramos nenhum serviço com o termo {searchQuery ? `"${searchQuery}"` : 'selecionado'}. Você pode limpar os filtros ou chamar nosso suporte diretamente no WhatsApp para verificar seu caso.
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-3 w-full justify-center">
-              <button
-                type="button"
-                onClick={handleClearFilters}
-                className="px-4 py-2.5 rounded-xl bg-[#162447] hover:bg-[#1E2E55] text-xs sm:text-sm font-semibold text-white transition-all"
-              >
-                Limpar filtros de busca
-              </button>
-
-              <a
-                href={`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
-                  `Olá, MK Tech! Pesquisei no site por "${searchQuery}" e não encontrei o serviço. Vocês realizam esse tipo de atendimento?`
-                )}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#1769FF] to-[#0E56DB] text-xs sm:text-sm font-semibold text-white shadow-md hover:from-[#39BFFF] hover:to-[#1769FF] transition-all"
-              >
-                <MessageCircle className="w-4 h-4" />
-                <span>Consultar no WhatsApp</span>
-              </a>
-            </div>
+            <button
+              type="button"
+              onClick={handleClearFilters}
+              className="px-4 py-2.5 rounded-xl bg-[#162447] hover:bg-[#1E2E55] text-xs sm:text-sm font-semibold text-white transition-all mb-4"
+            >
+              Limpar filtros de busca
+            </button>
           </div>
         )}
+
+        {/* =========================================================================
+            BLOCO OBRIGATÓRIO: "Não encontrou o serviço que procurava?"
+            Logo abaixo da área de resultados da pesquisa
+            ========================================================================= */}
+        <div className="mt-10 p-6 sm:p-8 rounded-2xl bg-gradient-to-r from-[#101B35] via-[#122042] to-[#101B35] border border-[#1E2E55] shadow-xl flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 rounded-xl bg-[#0B1222] border border-[#39BFFF]/30 flex items-center justify-center text-[#39BFFF] shrink-0 shadow-inner">
+              <HelpCircle className="w-6 h-6" />
+            </div>
+            <div>
+              <h3 className="text-lg sm:text-xl font-bold text-white mb-1">
+                Não encontrou o serviço que procurava?
+              </h3>
+              <p className="text-xs sm:text-sm text-slate-300 max-w-xl leading-relaxed">
+                Conte pra gente o que está acontecendo. Podemos analisar seu problema e verificar como ajudar.
+              </p>
+            </div>
+          </div>
+
+          <a
+            href={notFoundWhatsAppUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="shrink-0 inline-flex items-center gap-2 px-6 py-3.5 rounded-xl bg-gradient-to-r from-[#1769FF] to-[#0E56DB] hover:from-[#39BFFF] hover:to-[#1769FF] text-white text-sm font-bold shadow-lg shadow-[#1769FF]/20 active:scale-95 transition-all w-full md:w-auto justify-center"
+          >
+            <MessageCircle className="w-4 h-4" />
+            <span>Conversar pelo WhatsApp</span>
+          </a>
+        </div>
+
+        {/* Observação comercial discreta */}
+        <div className="mt-6 flex items-start gap-2.5 p-3.5 rounded-xl bg-[#101B35]/40 border border-[#1E2E55]/60 text-slate-400 text-xs">
+          <Info className="w-4 h-4 text-[#39BFFF] shrink-0 mt-0.5" />
+          <span>{COMMERCIAL_DISCLAIMER}</span>
+        </div>
 
       </div>
     </section>

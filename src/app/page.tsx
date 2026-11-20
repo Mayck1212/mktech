@@ -16,6 +16,7 @@ import {
   ServiceItem,
   ServiceCategory,
   AvailabilityStatus,
+  buildServiceWhatsAppUrl,
 } from '@/data/services';
 
 export default function HomePage() {
@@ -31,16 +32,14 @@ export default function HomePage() {
 
   // Modal state
   const [selectedService, setSelectedService] = useState<ServiceItem | null>(null);
-  const [modalMode, setModalMode] = useState<'details' | 'request'>('details');
 
   const handleOpenDetails = (service: ServiceItem) => {
     setSelectedService(service);
-    setModalMode('details');
   };
 
   const handleOpenWhatsAppRequest = (service: ServiceItem) => {
-    setSelectedService(service);
-    setModalMode('request');
+    const url = buildServiceWhatsAppUrl(service);
+    window.open(url, '_blank');
   };
 
   const handleCloseModal = () => {
@@ -85,14 +84,14 @@ export default function HomePage() {
           onSearchSubmit={handleSearchFromHero}
         />
 
-        {/* 2. Categories Section (4 interactive cards) */}
+        {/* 2. Categories Section (7 interactive cards) */}
         <CategoriesSection
           services={services}
           selectedCategory={selectedCategory}
           onSelectCategory={handleCategorySelect}
         />
 
-        {/* 3. Featured Services Section */}
+        {/* 3. Featured Services Section (8 most searched services) */}
         <FeaturedServices
           services={services}
           onSelectService={handleOpenDetails}
@@ -100,7 +99,7 @@ export default function HomePage() {
           onExploreAll={handleExploreAll}
         />
 
-        {/* 4. Complete Interactive Service Catalog */}
+        {/* 4. Complete Interactive Service Catalog & 'Não encontrou?' WhatsApp Block */}
         <CatalogSection
           services={services}
           searchQuery={searchQuery}
@@ -130,10 +129,9 @@ export default function HomePage() {
       {/* Floating WhatsApp Action Button */}
       <FloatingWhatsApp />
 
-      {/* Service Details & WhatsApp Request Modal */}
+      {/* Service Details Modal */}
       <ServiceModal
         service={selectedService}
-        initialMode={modalMode}
         onClose={handleCloseModal}
       />
     </div>
