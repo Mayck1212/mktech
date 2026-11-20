@@ -1,36 +1,83 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# MK TECH — Plataforma de Serviços Digitais e Assistência Técnica
 
-## Getting Started
+Plataforma moderna, profissional e de alta performance desenvolvida sob medida para a **MK Tech**, especializada em assistência técnica de software, celulares, computadores, formatação acadêmica e serviços digitais.
 
-First, run the development server:
+---
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## 🚀 Tecnologias Utilizadas
+
+- **Framework:** [Next.js](https://nextjs.org/) (App Router, Turbopack, React 19)
+- **Linguagem:** TypeScript
+- **Estilização:** Tailwind CSS v4 (Paleta de alta fidelidade: Azul-marinho, Azul elétrico e Ciano)
+- **Ícones:** Lucide React
+- **Imagens:** Sharp / Otimização WebP com canal alfa transparente
+
+---
+
+## 📱 Destaques do Projeto
+
+1. **Mobile-First Real:** Projetado para a melhor experiência em smartphones (área de toque confortável, gavetas de navegação, bottom-sheets e zero rolagem horizontal indesejada).
+2. **Hero Section com Mascote Oficial:** Integração do personagem cartoon segurando o celular e apontando, com transparência tratada e efeito aura tecnológico.
+3. **Catálogo Interativo Completo:**
+   - Pesquisa dinâmica por nome, sintomas, palavras-chave e categorias.
+   - Filtros por categoria (Celulares, Computadores, Documentos/Slides, Serviços Digitais).
+   - Filtro por disponibilidade (Disponível, Sob consulta, Indisponível).
+   - Ordenação inteligente por Menor preço, Maior preço, Ordem alfabética e Recomendados.
+   - Modo "Apenas em Destaque".
+4. **Modal de Detalhes e Solicitação via WhatsApp:**
+   - Visualização do que está incluso, prazos médios e observações de segurança.
+   - Formulário validado que compõe e envia uma mensagem organizada direto para o WhatsApp oficial: **+55 38 99912-5035**.
+5. **Dúvidas Frequentes (FAQ):** Acordeões interativos com respostas claras e transparentes.
+
+---
+
+## 📂 Como Atualizar ou Adicionar Serviços
+
+Todos os dados de serviços estão centralizados no arquivo:
+📁 `src/data/services.ts`
+
+**Nenhum dado de serviço fica espalhado nos componentes visuais.**
+
+### Exemplo de Estrutura de um Serviço:
+
+```typescript
+{
+  id: 'meu-novo-servico',
+  name: 'Nome do Serviço',
+  category: 'computadores', // 'celulares' | 'computadores' | 'documentos' | 'digitais'
+  description: 'Descrição curta para o card...',
+  fullDescription: 'Descrição completa detalhada para o modal...',
+  included: [
+    'Item incluso 1',
+    'Item incluso 2'
+  ],
+  importantInfo: 'Observações importantes (opcional)...',
+  price: 80, // Valor numérico base para ordenação
+  priceType: 'starting_at', // 'fixed' | 'starting_at' | 'under_review'
+  availability: 'disponivel', // 'disponivel' | 'sob_consulta' | 'indisponivel'
+  featured: true, // true para aparecer na seção de destaques
+  keywords: ['palavra1', 'palavra2', 'sintoma'],
+  estimatedTime: '2 a 4 horas',
+  deviceRequired: true // Se true, o formulário pede o modelo do aparelho
+}
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Quando você tiver a lista final de serviços, basta editar a constante `INITIAL_SERVICES` em `src/data/services.ts`!
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 🛠️ Comandos de Execução
 
-## Learn More
+```bash
+# Instalar dependências
+npm install
 
-To learn more about Next.js, take a look at the following resources:
+# Iniciar servidor em desenvolvimento
+npm run dev
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+# Gerar build de produção otimizado
+npm run build
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+# Executar servidor de produção
+npm run start
+```
